@@ -6,6 +6,11 @@ YOLOv8 is the latest version of the YOLO (You Only Look Once) object detection a
 Not only that, but a key feature of YOLOv8 is its scalability . and it is designed as a framework so  it supports all previous versions of YOLO, making it easy to switch between different versions and compare their performance.
 
 
+
+![yolov8_arciteture](https://user-images.githubusercontent.com/62583018/211719362-39fc8a88-b1ce-4ab3-9a9f-b640550515b4.jpg)
+
+
+
 ```
 
 YOLOv8 innovation and improvement points:
