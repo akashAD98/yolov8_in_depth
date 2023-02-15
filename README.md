@@ -28,3 +28,17 @@ YOLOv8 innovation and improvement points:
 6. Sample matching . YOLOv8 abandoned the previous IOU matching or unilateral ratio allocation, but used the Task-Aligned Assigner matching method.
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://blog.csdn.net/qq_29788741/article/details/128626422
