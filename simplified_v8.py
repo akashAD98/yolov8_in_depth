@@ -12,15 +12,15 @@ masks = results[0].masks
 class_names = ['person','bicycle','car','motorbike','aeroplane','bus','train','truck','boat','traffic light','fire hydrant','stop sign','parking meter','bench','bird','cat','dog','horse','sheep','cow','elephant','bear','zebra','giraffe','backpack','umbrella','handbag','tie','suitcase','frisbee','skis','snowboard','sports ball','kite','baseball bat','baseball glove','skateboard','surfboard','tennis racket','bottle','wine glass','cup','fork','knife','spoon','bowl','banana','apple','sandwich','orange','broccoli','carrot','hot dog','pizza','donut','cake','chair','sofa','pottedplant','bed','diningtable','toilet','tvmonitor','laptop','mouse','remote','keyboard','cell phone','microwave','oven','toaster','sink','refrigerator','book','clock','vase','scissors','teddy bear','hair drier','toothbrush']
 
 # Create a CSV file to save the results
-csv_file = open("results_withmask.csv", "w", newline="")
+csv_file = open("results.csv", "w", newline="")
 csv_writer = csv.writer(csv_file)
 csv_writer.writerow(["Tracker ID", "Bounding Box", "Object ID", "Confidence", "Mask"])
 
 for i, r in enumerate(results):
     for index, box in enumerate(r.boxes):
-        tracker_id = box.id
-        conf = box.conf
-        object_id = int(box.cls.item())  # Convert tensor to scalar integer
+        tracker_id = int(box.id.item())
+        conf = float(box.conf.item())
+        object_id = int(box.cls.item())
         bbox_data = box.xywh.tolist()
         mask_data = masks.xy[index].tolist()
 
