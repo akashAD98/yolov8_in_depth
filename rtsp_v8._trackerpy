@@ -1,0 +1,134 @@
+import os
+import cv2
+import threading
+import queue
+import supervision as sv
+import torch
+from ultralytics import YOLO
+from datetime import datetime
+from multiprocessing.pool import ThreadPool
+from main import YoloObjectDetection
+from draw_line_count import LineZone, LineZoneAnnotator
+
+pool = ThreadPool(processes=1)
+root = os.getcwd()
+
+class ObjectDetection:
+
+def __init__(self, rtsp_urls, rtsp_name, rtsp_q):
+
+    self.q = queue.Queue()
+    self.cap = None
+    self.rtsp_urls = rtsp_urls
+    self.rtsp_name = rtsp_name
+    self.rtsp_q = rtsp_q
+    self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print("Using Device: ", self.device)
+
+    self.model = self.load_model()
+
+    self.cap = cv2.VideoCapture(self.rtsp_urls)
+    self.q = queue.Queue()
+    t = threading.Thread(target=self._reader)
+    t.daemon = True  # Set the thread as daemon to stop it when the main program exits
+    t.start()
+
+    self.CLASS_NAMES_DICT = self.model.model.names
+    self.start_line = sv.Point(0, 540)
+    self.end_line = sv.Point(1919, 540)
+    self.box_annotator = sv.BoxAnnotator(thickness=2, text_thickness=1, text_scale=0.5)
+    self.line_counter = LineZone(start=self.start_line, end=self.end_line)
+    self.line_annotator = LineZoneAnnotator(thickness=2, text_thickness=1, text_scale=0.5)
+
+
+def load_model(self):
+
+    model = YOLO("yolov8l.pt")  # load a pretrained YOLOv8n model
+    model.fuse()
+
+    return model
+
+def predict(self, frame):
+    frames = frame.get()
+    for result in self.model.track(source=frames, show=False, stream=False, agnostic_nms=True, classes=0, conf=0.5):
+
+        return result
+
+def plot_bboxes(self, result, frame):
+
+    # frame = result.orig_img
+    detections = sv.Detections.from_yolov8(result)
+
+    if result.boxes.id is not None:
+        detections.tracker_id = result.boxes.id.cpu().numpy().astype(int)
+
+    labels = [
+        f"{tracker_id} {self.model.model.names[class_id]} {confidence:0.2f}"
+        for _, confidence, class_id, tracker_id
+        in detections
+    ]
+
+    frame = self.box_annotator.annotate(
+        scene=frame,
+        detections=detections,
+        labels=labels
+    )
+    self.line_counter.trigger(detections=detections)
+    self.line_annotator.annotate(frame=frame, line_counter=self.line_counter, )
+    return frame
+
+def _reader(self):
+    while True:
+        ret, frame = self.cap.read()
+        if not ret:
+            self.cap.release()
+            break
+        if not self.q.empty():
+            try:
+                self.q.get_nowait()  # discard previous (unprocessed) frame
+            except queue.Empty:
+                pass
+        self.q.put(frame)
+
+def read(self):
+    return self.q.get()
+
+def play_video(self):
+
+    try:
+        while True:
+            frame = self.read()
+            self.rtsp_q.put(frame)
+            results = self.predict(self.rtsp_q)
+            frame = self.plot_bboxes(results, frame)
+            resized_img = cv2.resize(frame, (1080, 720))
+            cv2.imshow(self.rtsp_name, resized_img)
+            if cv2.waitKey(1) == ord('q'):  # Exit if 'q' is pressed
+                break
+    except Exception as e:
+        print(e)
+if name == "main":
+urls = [
+
+    {"name": "rtsp1", "url": r"rtsp://admin:Admin123$@10.11.25.64:554/stream1"},
+    # {"name": "rtsp2", "url": r"rtsp://admin:Admin123$@10.11.25.60:554/stream1"},
+    # {"name": "rtsp3", "url": r"rtsp://admin:Admin123$@10.11.25.64:554/stream1"},
+    # {"name": "rtsp4", "url": r"rtsp://admin:Admin123$@10.11.25.57:554/stream1"},
+    # {"name": "rtsp5", "url": r"rtsp://admin:Admin123$@10.11.25.59:554/stream1"}
+]
+queue_name = queue.Queue()
+queue_list = []
+threads = []
+for i in urls:
+    url = i['url']
+    name = i["name"]
+    queue_name.name = name
+    queue_list.append(queue_name)
+    td = threading.Thread(target=ObjectDetection(url, name, queue_name).play_video)
+    td.start()
+    threads.append(td)
+
+# Wait for all threads to complete
+for thread in threads:
+    thread.join()
+cv2.destroyAllWindows()
